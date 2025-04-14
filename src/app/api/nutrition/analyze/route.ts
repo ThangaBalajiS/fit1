@@ -2,29 +2,33 @@ import { NextResponse } from 'next/server';
 import { analyzeFoodIntake } from '@/lib/openai';
 import { storeNutritionData } from '@/lib/vectorstore';
 import { FoodIntake } from '@/types/nutrition';
+import { connectDB } from '@/lib/db';
 import { z } from 'zod';
 
 const foodIntakeSchema = z.object({
-    food: z.string(),
-    time: z.string(),
-  })
+  userId: z.string(),
+  food: z.string(),
+  time: z.string(),
+});
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    // Ensure database connection
+    await connectDB();
     
+    const body = await request.json();
     const validatedData = foodIntakeSchema.parse(body);
-    const foodIntake: FoodIntake = validatedData;
+    const { userId, ...foodIntake } = validatedData;
 
     // Analyze food intake using OpenAI
     const analysis = await analyzeFoodIntake(foodIntake);
     console.log(analysis);
-    // Store in vector database
-    await storeNutritionData(foodIntake, analysis);
+    // Store in MongoDB
+    const storedData = await storeNutritionData(userId, foodIntake, analysis);
 
     return NextResponse.json({
       success: true,
-      data: analysis,
+      data: storedData,
     });
   } catch (error) {
     console.error('Error processing food intake:', error);

@@ -11,8 +11,17 @@ export interface NutritionAnalysis {
     fats: number;
     fiber: number;
   };
-  meals: {
-    name: string;
+  meal: {
+    name: string; // meal of the day
+    calories: number;
+    macros: {
+      protein: number;
+      carbs: number;
+      fats: number;
+    };
+  };
+  foods: {
+    name: string; // dish name
     calories: number;
     macros: {
       protein: number;

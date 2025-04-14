@@ -11,6 +11,37 @@ const openai = new OpenAI({
 
 export async function analyzeFoodIntake(foodIntake: FoodIntake): Promise<NutritionAnalysis> {
   const prompt = `Analyze the following food intake and provide detailed nutritional information including calories and macros. Format the response as JSON matching the NutritionAnalysis type.
+
+  here's the NutritionAnalysis type:
+  {
+  totalCalories: number;
+  macros: {
+    protein: number;
+    carbs: number;
+    fats: number;
+    fiber: number;
+  };
+  meal: { // meal wise breakdown
+    name: string; // meal of the day
+    calories: number;
+    macros: {
+      protein: number;
+      carbs: number;
+      fats: number;
+    };
+  }
+
+  foods: { // dish wise breakdown
+  name: string; // dish name
+  calories: number;
+  macros: {
+    protein: number;
+    carbs: number;
+    fats: number;
+    };
+  }[];
+  recommendations: string[];
+} 
   
 Food Intake Details:
 ${JSON.stringify(foodIntake)}
@@ -18,8 +49,7 @@ ${JSON.stringify(foodIntake)}
 Provide accurate estimates for:
 1. Total calories
 2. Macronutrient breakdown (protein, carbs, fats, fiber)
-3. Per-meal breakdown
-4. Nutritional recommendations
+3. Nutritional recommendations
 
 Response must be valid JSON.`;
 

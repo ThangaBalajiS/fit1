@@ -3,19 +3,11 @@ import { cookies } from 'next/headers';
 import { workos } from '@/lib/workos';
 import { connectDB } from '@/lib/db';
 import mongoose from 'mongoose';
+import { User } from '@/models/User';
 
-// Define User schema if not already defined
-const UserSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  name: String,
-  picture: String,
-  workosId: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now },
-  lastLogin: Date,
-});
+// Define User schema if not already define
 
 // Get or create User model
-const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
 export async function GET(request: Request) {
   try {

@@ -6,7 +6,6 @@ import { connectDB } from '@/lib/db';
 import { z } from 'zod';
 
 const foodIntakeSchema = z.object({
-  userId: z.string(),
   food: z.string(),
   time: z.string(),
 });
@@ -15,10 +14,13 @@ export async function POST(request: Request) {
   try {
     // Ensure database connection
     await connectDB();
-    
+    //cookie is a string of the user id
+    const cookie = request.headers.get('cookie');
+    let userId = cookie?.split('=')[1] || '';
+    userId = userId.split(';')[0];
     const body = await request.json();
     const validatedData = foodIntakeSchema.parse(body);
-    const { userId, ...foodIntake } = validatedData;
+    const { ...foodIntake } = validatedData;
 
     // Analyze food intake using OpenAI
     const analysis = await analyzeFoodIntake(foodIntake);

@@ -248,6 +248,15 @@ export default function Dashboard() {
     fetchTodaysWater();
   }, []);
 
+  // Collapse sidebar by default on mobile
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 768) {
+        setIsSidebarCollapsed(true);
+      }
+    }
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -257,9 +266,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
-      <div className={`bg-gray-800 dark:bg-gray-900 text-white ${isSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 ease-in-out`}>
+      <div className={`bg-gray-800 dark:bg-gray-900 text-white ${isSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 ease-in-out fixed md:static h-full z-40 md:z-auto top-0 left-0 md:relative`} style={{ minHeight: '100vh' }}>
         <div className="flex flex-col h-full">
           <div className="p-4 flex items-center justify-between">
             {!isSidebarCollapsed && <h2 className="text-xl font-bold">FIT1</h2>}
@@ -320,7 +329,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-auto">
+      <div className={`flex-1 p-4 md:p-6 overflow-auto mt-16 md:mt-0 ${isSidebarCollapsed ? 'ml-16 md:ml-0' : 'ml-0'}`}>
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">My Fitness Dashboard</h1>

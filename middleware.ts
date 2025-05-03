@@ -21,7 +21,7 @@ function isPublicPath(path: string): boolean {
   if (publicPaths.has(path)) {
     return true;
   }
-
+  console.log('path', path);
   // Check for static files and auth-related paths
   return (
     path.startsWith('/_next') ||

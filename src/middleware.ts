@@ -19,6 +19,7 @@ const initDB = async () => {
 
 export async function middleware(request: NextRequest) {
   await initDB();
+  console.log('middleware');
   return NextResponse.next();
 }
 

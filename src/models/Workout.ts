@@ -30,7 +30,6 @@ const WorkoutSchema = new mongoose.Schema({
     totalCaloriesBurned: { type: Number, required: true },
     workoutEfficiency: { type: Number, required: true },
     primaryMuscleGroups: [String],
-    recommendations: [String],
     trends: [TrendSchema],
   },
   timestamp: { type: Date, default: Date.now },

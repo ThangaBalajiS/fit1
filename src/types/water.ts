@@ -13,6 +13,5 @@ export interface WaterAnalysis {
     afternoon: number;
     evening: number;
   };
-  recommendations: string[];
   hydrationStatus: 'optimal' | 'adequate' | 'insufficient';
 } 

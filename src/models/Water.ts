@@ -11,7 +11,6 @@ const WaterSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
   intake: {
     amount: { type: Number, required: true },
-    type: { type: String, enum: ['water', 'sparkling_water', 'flavored_water'], required: true },
     time: { type: String, required: true },
   },
   analysis: {
@@ -19,7 +18,6 @@ const WaterSchema = new mongoose.Schema({
     goal: { type: Number, required: true },
     completionRate: { type: Number, required: true },
     intakePattern: IntakePatternSchema,
-    recommendations: [String],
     hydrationStatus: { 
       type: String, 
       enum: ['optimal', 'adequate', 'insufficient'], 

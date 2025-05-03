@@ -17,13 +17,15 @@ export interface WorkoutSession {
 }
 
 export interface WorkoutAnalysis {
-  totalCaloriesBurned: number;
-  workoutEfficiency: number; // 0-100 score
-  primaryMuscleGroups: string[];
-  recommendations: string[];
-  trends: {
-    category: string;
-    trend: 'improving' | 'declining' | 'stable';
-    analysis: string;
-  }[];
+  totalDuration: number;
+  caloriesBurned: number;
+  averageHeartRate: number;
+  maxHeartRate: number;
+  minHeartRate: number;
+  zones: {
+    warmup: number;
+    fatburn: number;
+    cardio: number;
+    peak: number;
+  };
 } 

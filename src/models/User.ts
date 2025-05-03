@@ -15,8 +15,11 @@ const UserSchema = new mongoose.Schema({
     gender: String,
     goal: String,
     activityLevel: String,
+    dailyCaloriesRecommended: Number,
+    waterIntakeRecommended: Number,
+    sleepDurationRecommended: Number
   }
 });
 
 // Get or create User model
-export const User = mongoose.model('User', UserSchema); 
+export const User = mongoose.models.User || mongoose.model('User', UserSchema); 

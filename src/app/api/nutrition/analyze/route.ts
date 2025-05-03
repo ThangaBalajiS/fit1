@@ -8,6 +8,7 @@ import { z } from 'zod';
 const foodIntakeSchema = z.object({
   food: z.string(),
   time: z.string(),
+  date: z.string(), // ISO date string
 });
 
 export async function POST(request: Request) {
@@ -16,7 +17,8 @@ export async function POST(request: Request) {
     await connectDB();
     //cookie is a string of the user id
     const cookie = request.headers.get('cookie');
-    let userId = cookie?.split('=')[1] || '';
+    console.log(cookie);
+    let userId = cookie?.split('fit1-session=')[1] || '';
     userId = userId.split(';')[0];
     const body = await request.json();
     const validatedData = foodIntakeSchema.parse(body);

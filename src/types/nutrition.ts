@@ -1,6 +1,7 @@
 export interface FoodIntake {
   food: string;
   time: string;
+  date: string; // ISO date string for the food entry
 }
 
 export interface NutritionAnalysis {
@@ -29,5 +30,4 @@ export interface NutritionAnalysis {
       fats: number;
     };
   }[];
-  recommendations: string[];
 } 

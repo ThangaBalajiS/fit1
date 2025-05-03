@@ -68,6 +68,26 @@ export async function GET(request: Request) {
       maxAge: 7 * 24 * 60 * 60,
     });
 
+    // Set accessToken and refreshToken cookies if present
+    if (authResponse.accessToken) {
+      response.cookies.set('fit1-access-token', authResponse.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60,
+      });
+    }
+    if (authResponse.refreshToken) {
+      response.cookies.set('fit1-refresh-token', authResponse.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60,
+      });
+    }
+
     return response;
   } catch (error) {
     console.error('Authentication error:', error);

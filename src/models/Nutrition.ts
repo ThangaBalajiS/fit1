@@ -29,13 +29,13 @@ const NutritionSchema = new mongoose.Schema({
   foodIntake: {
     food: { type: String, required: true },
     time: { type: String, required: true },
+    date: { type: String, required: true },
   },
   analysis: {
     totalCalories: { type: Number, required: true },
     macros: MacroSchema,
     meal: MealAnalysisSchema,
     foods: [MealAnalysisSchema],
-    recommendations: [{ type: String }],
   },
   timestamp: { type: Date, default: Date.now },
 }, {

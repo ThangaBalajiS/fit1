@@ -35,12 +35,12 @@ export async function PUT(request: Request) {
     const body = await request.json();
     
     // Validate the request body
-    const validatedData = userDetailsSchema.parse(body);
+    // const validatedData = userDetailsSchema.parse(body);
     
     // Calculate additional user metrics based on the validated data
     const extendedData = {
-      ...validatedData,
-      ...await calculateAdditionalMetrics(validatedData)
+      ...body,
+      ...await calculateAdditionalMetrics(body)
     };
     
     await connectDB();

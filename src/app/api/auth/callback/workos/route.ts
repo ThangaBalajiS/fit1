@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     }
 
     // Create response with redirect
-    const response = NextResponse.redirect(searchParams.get('state') || 'http://localhost:3000');
+    const response = NextResponse.redirect(searchParams.get('state') || 'https://tryfit1.netlify.app');
 
     // Set session cookie
     response.cookies.set('fit1-session', dbUser._id.toString(), {

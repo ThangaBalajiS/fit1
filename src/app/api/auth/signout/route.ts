@@ -10,7 +10,7 @@ export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get('fit1-access-token')?.value;
   if (!token) {
-    return NextResponse.redirect('http://localhost:3000/api/auth/signin');
+    return NextResponse.redirect('tryfit1.netlify.app/api/auth/signin');
   }
   const decodedToken = await decodeJwt(token);
   //workos signout

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import DatePicker from './DatePicker';
-import { format } from 'date-fns';
 
 interface WeightTrackerProps {
   onSubmit: (weightData: {

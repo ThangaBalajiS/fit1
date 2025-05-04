@@ -211,7 +211,7 @@ function fallbackCalculateMetrics(data: z.infer<typeof userDetailsSchema>) {
   };
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get('fit1-session')?.value;

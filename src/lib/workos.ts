@@ -18,12 +18,11 @@ if (!process.env.NEXTAUTH_URL) {
 }
 
 export const workos = new WorkOS(process.env.WORKOS_API_KEY);
-export const clientId = process.env.WORKOS_CLIENT_ID;
 export const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/callback/workos`;
 
 export const getAuthorizationUrl = () => {
   return workos.userManagement.getAuthorizationUrl({
-    clientId,
+    clientId: process.env.WORKOS_CLIENT_ID as string,
     redirectUri,
     provider: 'authkit',
   });

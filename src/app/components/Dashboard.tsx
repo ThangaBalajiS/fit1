@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaUtensils, FaDumbbell, FaGlassWater, FaUser, FaChartLine, FaClock, FaGear } from 'react-icons/fa6';
+import { FaUser, FaChartLine, FaClock, FaGear } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 import DashboardTrackingSection from '@/components/DashboardTrackingSection';
 

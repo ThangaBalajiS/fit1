@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { analyzeFoodIntake } from '@/lib/openai';
 import { storeNutritionData } from '@/lib/vectorstore';
-import { FoodIntake } from '@/types/nutrition';
 import { connectDB } from '@/lib/db';
 import { z } from 'zod';
 

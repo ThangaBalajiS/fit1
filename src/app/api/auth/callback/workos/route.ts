@@ -55,9 +55,7 @@ export async function GET(request: Request) {
 
     // Create response with redirect
     // Remove query params from the URL after processing
-    const cleanPath = request.url.split('?')[0];
-    const redirectUrl = cleanPath;
-    const response = NextResponse.redirect(redirectUrl);
+    const response = NextResponse.redirect(searchParams.get('state') || process.env.NEXT_PUBLIC_APP_URL!);
 
     // Set session cookie
     response.cookies.set('fit1-session', dbUser._id.toString(), {

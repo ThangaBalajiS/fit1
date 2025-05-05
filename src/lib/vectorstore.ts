@@ -56,7 +56,7 @@ export async function queryNutritionForDate(userId: string, date: string) {
     userId,
     'foodIntake.date': date
   })
-    .sort({ 'foodIntake.time': 1 })
+    .sort({ 'createdAt': -1 })
     .lean();
 }
 

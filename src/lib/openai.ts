@@ -126,4 +126,99 @@ Response must be valid JSON.`;
 
   const analysis = JSON.parse(response.choices[0].message.content) as WaterAnalysis;
   return analysis;
+}
+
+export async function generateAIFeedback(
+  userDetails: any, 
+  entryType: 'food' | 'water' | 'weight', 
+  entryData: any,
+  analysis?: any
+): Promise<string> {
+  let prompt = '';
+
+  if (entryType === 'food') {
+    prompt = `Generate personalized health feedback about this food entry based on the user's profile and goals.
+    
+User Profile:
+- Height: ${userDetails?.height || 'N/A'} cm
+- Weight: ${userDetails?.weight || 'N/A'} kg
+- Age: ${userDetails?.age || 'N/A'}
+- Gender: ${userDetails?.gender || 'N/A'}
+- Goal: ${userDetails?.goal || 'N/A'} 
+- Activity Level: ${userDetails?.activityLevel || 'N/A'}
+- Daily Calorie Recommendation: ${userDetails?.dailyCaloriesRecommended || 'N/A'} kcal
+
+Food Entry: ${entryData.food}
+Analysis: ${JSON.stringify(analysis)}
+
+Provide a brief, personalized and helpful comment (2-3 sentences maximum) about this meal choice in relation to their fitness goals. Include specific nutrients they're getting or might be missing. Be conversational, encouraging, and provide actionable advice if relevant.`;
+  } else if (entryType === 'water') {
+    prompt = `Generate personalized health feedback about this water intake based on the user's profile and goals.
+    
+User Profile:
+- Height: ${userDetails?.height || 'N/A'} cm
+- Weight: ${userDetails?.weight || 'N/A'} kg
+- Age: ${userDetails?.age || 'N/A'}
+- Gender: ${userDetails?.gender || 'N/A'}
+- Goal: ${userDetails?.goal || 'N/A'} 
+- Activity Level: ${userDetails?.activityLevel || 'N/A'}
+- Daily Water Recommendation: ${userDetails?.waterIntakeRecommended || 'N/A'} mL
+
+Water Intake: ${entryData.amount} mL
+
+Provide a brief, personalized and helpful comment (2-3 sentences maximum) about this water intake in relation to their hydration needs. Be conversational, encouraging, and provide actionable advice if relevant.`;
+  } else if (entryType === 'weight') {
+    // Calculate BMI if height is available
+    let bmi = '';
+    let weightDiff = '';
+
+    if (userDetails?.height && entryData.weight) {
+      const heightInMeters = userDetails.height / 100;
+      const calculatedBmi = (entryData.weight / (heightInMeters * heightInMeters)).toFixed(1);
+      bmi = `\nCalculated BMI: ${calculatedBmi}`;
+    }
+
+    if (userDetails?.weight && entryData.weight) {
+      const diff = (entryData.weight - userDetails.weight).toFixed(2);
+      const diffNum = Number(diff);
+      const isGain = diffNum > 0;
+      if (Math.abs(diffNum) > 0.05) { // Only mention if change > 50g
+        weightDiff = `\nWeight change: ${isGain ? '+' : ''}${diff} kg compared to previous record`;
+      }
+    }
+
+    prompt = `Generate personalized health feedback about this weight entry based on the user's profile and goals.
+    
+User Profile:
+- Height: ${userDetails?.height || 'N/A'} cm
+- Current Weight: ${entryData.weight} kg${weightDiff}
+- Age: ${userDetails?.age || 'N/A'}
+- Gender: ${userDetails?.gender || 'N/A'}
+- Goal: ${userDetails?.goal || 'N/A'} 
+- Activity Level: ${userDetails?.activityLevel || 'N/A'}${bmi}
+
+Provide a brief, personalized and helpful comment (2-3 sentences maximum) about this weight in relation to their fitness goals. Include relevant health insights based on the BMI (if available) and weight change. Be conversational, encouraging, and provide actionable advice relevant to their specific goal (weight_loss, muscle_gain, maintenance, etc).`;
+  }
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content: "You are a friendly and encouraging fitness coach and nutritionist. Provide concise, personalized feedback that's positive but realistic."
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    temperature: 0.7,
+    max_tokens: 150,
+  });
+
+  if (!response.choices[0].message.content) {
+    return "Great job tracking your progress!";
+  }
+
+  return response.choices[0].message.content.trim();
 } 

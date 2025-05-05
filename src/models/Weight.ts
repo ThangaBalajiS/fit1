@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 import type { WeightEntry as WeightEntryType, WeightAnalysis as WeightAnalysisType } from '@/types/weight';
 
 // Schema for body measurements
@@ -75,4 +75,38 @@ export const determineWeightTrend = (
   const change = currentWeight - previousWeight;
   if (Math.abs(change) < threshold) return 'stable';
   return change > 0 ? 'up' : 'down';
-}; 
+};
+
+export interface WeightDocument extends Document {
+  userId: string;
+  weight: number;
+  date: string;
+  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const weightSchema = new Schema(
+  {
+    userId: {
+      type: String,
+      required: true,
+      index: true
+    },
+    weight: {
+      type: Number,
+      required: true
+    },
+    date: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  { timestamps: true }
+);
+
+export const Weight = mongoose.models.Weight || mongoose.model<WeightDocument>('Weight', weightSchema); 

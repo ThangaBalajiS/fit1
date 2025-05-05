@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       clientId: process.env.WORKOS_CLIENT_ID!,
     });
 
-    console.log('authResponse', authResponse);
+    // console.log('authResponse', authResponse);
 
     if (!authResponse.user) {
       return NextResponse.redirect('/auth/error?error=Failed to authenticate user');
@@ -54,7 +54,10 @@ export async function GET(request: Request) {
     }
 
     // Create response with redirect
-    const response = NextResponse.redirect(searchParams.get('state') || 'https://tryfit1.netlify.app');
+    // Remove query params from the URL after processing
+    const cleanPath = request.url.split('?')[0];
+    const redirectUrl = cleanPath;
+    const response = NextResponse.redirect(redirectUrl);
 
     // Set session cookie
     response.cookies.set('fit1-session', dbUser._id.toString(), {

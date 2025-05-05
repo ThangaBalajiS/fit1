@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { analyzeWaterIntake } from '@/lib/openai';
+import { analyzeWaterIntake, generateAIFeedback } from '@/lib/openai';
 import { storeWaterData } from '@/lib/vectorstore';
 import { connectDB } from '@/lib/db';
 import { WaterIntake } from '@/types/water';
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     let userId = cookie?.split('fit1-session=')[1] || '';
     userId = userId.split(';')[0];
     const body = await request.json();
-    const { amount, time, date } = body;
+    const { amount, time, date, userDetails } = body;
     if (!amount || !time || !date) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
@@ -26,7 +26,18 @@ export async function POST(request: Request) {
     };
     const analysis = await analyzeWaterIntake(waterIntake, goal);
     const storedData = await storeWaterData(userId, waterIntake, analysis);
-    return NextResponse.json({ success: true, data: storedData });
+    
+    // Generate AI feedback if user details are provided
+    let aiFeedback = null;
+    if (userDetails) {
+      aiFeedback = await generateAIFeedback(userDetails, 'water', waterIntake);
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      data: storedData,
+      aiFeedback
+    });
   } catch (error) {
     console.error('Error processing water intake:', error);
     return NextResponse.json(

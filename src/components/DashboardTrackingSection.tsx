@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FaUtensils, FaWeightScale, FaBed, FaGlassWater } from 'react-icons/fa6';
 import SleepTracker from './SleepTracker';
 import WeightTracker from './WeightTracker';
@@ -19,6 +19,12 @@ interface WaterTrackingState {
   amount: string;
   selectedTime: string;
   selectedDate: string;
+}
+
+interface AIFeedbackState {
+  isOpen: boolean;
+  message: string;
+  title: string;
 }
 
 interface TrackingCardProps {
@@ -72,7 +78,11 @@ const formatDateTime = (time: string) => {
   return `${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}, ${date.getDate()}-${date.toLocaleString('default', { month: 'long' })}-${date.getFullYear()}`;
 };
 
-export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWaterEntry }: { userHeight?: number, onFoodEntry?: () => void, onWaterEntry?: () => void }) {
+export default function DashboardTrackingSection({ userDetails, onFoodEntry, onWaterEntry }: { 
+  userDetails?: any, 
+  onFoodEntry?: () => void, 
+  onWaterEntry?: () => void 
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   
@@ -95,6 +105,40 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
     selectedTime: getCurrentTime(),
     selectedDate: getCurrentDate(),
   });
+
+  // State for AI feedback modal
+  const [aiFeedback, setAIFeedback] = useState<AIFeedbackState>({
+    isOpen: false,
+    message: '',
+    title: '',
+  });
+  
+  // Refs for modal content
+  const foodModalRef = useRef<HTMLDivElement>(null);
+  const waterModalRef = useRef<HTMLDivElement>(null);
+  const aiModalRef = useRef<HTMLDivElement>(null);
+  
+  // Close modals when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (foodTracking.isOpen && foodModalRef.current && !foodModalRef.current.contains(event.target as Node)) {
+        setFoodTracking(prev => ({ ...prev, isOpen: false }));
+      }
+      
+      if (waterTracking.isOpen && waterModalRef.current && !waterModalRef.current.contains(event.target as Node)) {
+        setWaterTracking(prev => ({ ...prev, isOpen: false }));
+      }
+      
+      if (aiFeedback.isOpen && aiModalRef.current && !aiModalRef.current.contains(event.target as Node)) {
+        setAIFeedback(prev => ({ ...prev, isOpen: false }));
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [foodTracking.isOpen, waterTracking.isOpen, aiFeedback.isOpen]);
   
   // Handle food tracking
   const handleFoodTrackingClick = () => {
@@ -120,6 +164,7 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
           food: foodTracking.details,
           time: formatDateTime(foodTracking.selectedTime),
           date: foodTracking.selectedDate,
+          userDetails: userDetails // Include user details for AI context
         }),
       });
 
@@ -134,6 +179,16 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
 
       const data = await response.json();
       toast.success('Food entry saved!', { id: toastId });
+      
+      // Show AI feedback in modal if available
+      if (data.aiFeedback) {
+        setAIFeedback({
+          isOpen: true,
+          title: 'Nutrition Insight',
+          message: data.aiFeedback
+        });
+      }
+      
       if (onFoodEntry) onFoodEntry();
     } catch (error) {
       toast.error('Error saving food entry', { id: toastId });
@@ -155,9 +210,49 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
   };
   
   // Handle weight tracking submission
-  const handleWeightSubmit = (data: any) => {
-    console.log('Weight data submitted:', data);
-    // TODO: Implement submission to API
+  const handleWeightSubmit = async (data: any) => {
+    setLoading(true);
+    const toastId = toast.loading('Saving weight data...');
+    try {
+      const response = await fetch('/api/weight/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          weight: data.weight,
+          date: data.date.toISOString().split('T')[0],
+          userDetails: userDetails
+        }),
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.replace('/api/auth/signin');
+          toast.dismiss(toastId);
+          return;
+        }
+        throw new Error('Failed to submit weight data');
+      }
+      
+      const responseData = await response.json();
+      toast.success('Weight entry saved!', { id: toastId });
+      
+      // Show AI feedback in modal if available
+      if (responseData.aiFeedback) {
+        setAIFeedback({
+          isOpen: true,
+          title: 'Weight Insight',
+          message: responseData.aiFeedback
+        });
+      }
+    } catch (error) {
+      toast.error('Error saving weight data', { id: toastId });
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
     setShowWeightTracker(false);
   };
 
@@ -184,6 +279,7 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
           amount: Number(waterTracking.amount),
           time: waterTracking.selectedTime,
           date: waterTracking.selectedDate,
+          userDetails: userDetails // Include user details for AI context
         }),
       });
       if (!response.ok) {
@@ -194,7 +290,19 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
         }
         throw new Error('Failed to submit water data');
       }
+      
+      const data = await response.json();
       toast.success('Water entry saved!', { id: toastId });
+      
+      // Show AI feedback in modal if available
+      if (data.aiFeedback) {
+        setAIFeedback({
+          isOpen: true,
+          title: 'Hydration Insight',
+          message: data.aiFeedback
+        });
+      }
+      
       if (onWaterEntry) onWaterEntry();
     } catch (error) {
       toast.error('Error saving water entry', { id: toastId });
@@ -253,7 +361,7 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
       {/* Food Tracking Modal */}
       {foodTracking.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+          <div ref={foodModalRef} className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
             <h2 className="text-xl font-bold mb-4 text-gray-900">
               Track Food
             </h2>
@@ -292,7 +400,6 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
                 placeholder="Enter what you ate (e.g., '2 eggs, 1 slice of toast, 1 cup of coffee')"
               />
             </div>
-            
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setFoodTracking(prev => ({ ...prev, isOpen: false }))}
@@ -324,13 +431,14 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
         isOpen={showWeightTracker}
         onClose={() => setShowWeightTracker(false)}
         onSubmit={handleWeightSubmit}
-        userHeight={userHeight}
+        userHeight={userDetails?.height}
+        userWeight={userDetails?.weight}
       />
       
       {/* Water Tracking Modal */}
       {waterTracking.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+          <div ref={waterModalRef} className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
             <h2 className="text-xl font-bold mb-4 text-gray-900">Track Water</h2>
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-800 mb-1">Date</label>
@@ -376,6 +484,34 @@ export default function DashboardTrackingSection({ userHeight, onFoodEntry, onWa
                 disabled={loading}
               >
                 Save Water Entry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* AI Feedback Modal */}
+      {aiFeedback.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+          <div ref={aiModalRef} className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">{aiFeedback.title}</h2>
+              <button 
+                onClick={() => setAIFeedback(prev => ({ ...prev, isOpen: false }))}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
+              <p className="text-gray-700">{aiFeedback.message}</p>
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setAIFeedback(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              >
+                Thanks!
               </button>
             </div>
           </div>

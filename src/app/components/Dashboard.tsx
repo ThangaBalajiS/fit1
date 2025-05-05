@@ -42,6 +42,8 @@ export default function Dashboard() {
   const [todaysFoods, setTodaysFoods] = useState<any[]>([]);
   const [todaysCalories, setTodaysCalories] = useState(0);
   const [todaysWater, setTodaysWater] = useState(0);
+  const [showFoodDetailModal, setShowFoodDetailModal] = useState(false);
+  const [selectedFoodEntry, setSelectedFoodEntry] = useState<any | null>(null);
 
   useEffect(() => {
     // Check if the auth cookie exists
@@ -257,6 +259,20 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Calculate daily macro totals
+  const dailyMacros = todaysFoods.reduce(
+    (totals, entry) => {
+      if (entry.analysis?.macros) {
+        totals.protein += entry.analysis.macros.protein || 0;
+        totals.carbs += entry.analysis.macros.carbs || 0;
+        totals.fats += entry.analysis.macros.fats || 0;
+        totals.fiber += entry.analysis.macros.fiber || 0;
+      }
+      return totals;
+    },
+    { protein: 0, carbs: 0, fats: 0, fiber: 0 }
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -381,7 +397,20 @@ export default function Dashboard() {
           </div>
 
           {/* New Tracking Section */}
-          <DashboardTrackingSection userHeight={userDetails?.height} onFoodEntry={refreshTodaysFood} onWaterEntry={fetchTodaysWater} />
+          <DashboardTrackingSection userDetails={userDetails} onFoodEntry={refreshTodaysFood} onWaterEntry={fetchTodaysWater} />
+
+          {/* Daily Macros Summary */}
+          <div className="max-w-4xl mx-auto mt-4 mb-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex flex-col md:flex-row items-center justify-between">
+            <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 md:mb-0">
+              Macros for Today:
+            </div>
+            <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-300">
+              <span>Protein: <span className="font-bold">{dailyMacros.protein}g</span></span>
+              <span>Carbs: <span className="font-bold">{dailyMacros.carbs}g</span></span>
+              <span>Fats: <span className="font-bold">{dailyMacros.fats}g</span></span>
+              <span>Fiber: <span className="font-bold">{dailyMacros.fiber}g</span></span>
+            </div>
+          </div>
 
           {/* Food list at the bottom, not in the tracker or card */}
           {todaysFoods.length > 0 && (
@@ -389,12 +418,31 @@ export default function Dashboard() {
               <div className="font-semibold mb-2 text-gray-700 dark:text-gray-200">Today's Food Entries:</div>
               <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                 {todaysFoods.map((entry, idx) => (
-                  <li key={entry._id || idx} className="py-2 text-sm text-gray-800 dark:text-gray-100">
+                  <li
+                    key={entry._id || idx}
+                    className="py-2 text-sm text-gray-800 dark:text-gray-100 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    onClick={() => {
+                      setSelectedFoodEntry(entry);
+                      setShowFoodDetailModal(true);
+                    }}
+                  >
                     <span className="font-medium">{entry.foodIntake.food}</span>
                     {entry.analysis?.totalCalories ? (
                       <span className="ml-2 text-gray-500 dark:text-gray-300">({entry.analysis.totalCalories} kcal)</span>
                     ) : null}
                     <span className="ml-2 text-gray-400 dark:text-gray-500">{entry.foodIntake.time}</span>
+                    {entry.analysis?.macros && (
+                      <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+                        <br />
+                        [P: {entry.analysis.macros.protein}g, C: {entry.analysis.macros.carbs}g, F: {entry.analysis.macros.fats}g, Fiber: {entry.analysis.macros.fiber}g]
+                      </span>
+                    )}
+                    {entry.analysis?.meal?.name && (
+                      <span className="ml-2 text-xs text-blue-400 dark:text-blue-300">
+                        <br />
+                        {entry.analysis.meal.name}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -659,6 +707,36 @@ export default function Dashboard() {
               >
                 Save Changes
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFoodDetailModal && selectedFoodEntry && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-xl relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              onClick={() => setShowFoodDetailModal(false)}
+            >
+              ✕
+            </button>
+            <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">
+              Food Details
+            </h2>
+            <div className="mb-2 text-sm text-gray-700 dark:text-gray-200">
+              <div className="font-semibold mb-2">Meal: {selectedFoodEntry.analysis?.meal?.name || 'N/A'}</div>
+              <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                {selectedFoodEntry.analysis?.foods?.map((food: any, idx: number) => (
+                  <li key={food._id?.$oid || idx} className="py-2">
+                    <div className="font-medium">{food.name}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-300">
+                      Calories: {food.calories} kcal<br />
+                      Protein: {food.macros.protein}g, Carbs: {food.macros.carbs}g, Fats: {food.macros.fats}g
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

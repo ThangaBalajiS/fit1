@@ -1,37 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import DatePicker from './DatePicker';
+import { FaMinus, FaPlus } from 'react-icons/fa6';
 
 interface WeightTrackerProps {
   onSubmit: (weightData: {
     date: Date;
     weight: number;
-    bodyFat?: number;
-    bmi?: number;
-    notes?: string;
-    measurements?: {
-      waist?: number;
-      chest?: number;
-      arms?: number;
-      thighs?: number;
-      hips?: number;
-    };
   }) => void;
   initialData?: {
     date?: Date;
     weight?: number;
-    bodyFat?: number;
-    notes?: string;
-    measurements?: {
-      waist?: number;
-      chest?: number;
-      arms?: number;
-      thighs?: number;
-      hips?: number;
-    };
   };
   userHeight?: number; // in cm, for BMI calculation
+  userWeight?: number; // in kg, for default value
   isOpen: boolean;
   onClose: () => void;
 }
@@ -40,36 +23,22 @@ export default function WeightTracker({
   onSubmit,
   initialData,
   userHeight,
+  userWeight,
   isOpen,
   onClose
 }: WeightTrackerProps) {
   // State for form data
   const [date, setDate] = useState<Date>(initialData?.date || new Date());
-  const [weight, setWeight] = useState<number>(initialData?.weight || 0);
-  const [bodyFat, setBodyFat] = useState<number | undefined>(initialData?.bodyFat);
-  const [notes, setNotes] = useState<string>(initialData?.notes || '');
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  const [weight, setWeight] = useState<number>(userWeight || initialData?.weight || 70);
+  const modalRef = useRef<HTMLDivElement>(null);
   
-  // State for body measurements
-  const [waist, setWaist] = useState<number | undefined>(initialData?.measurements?.waist);
-  const [chest, setChest] = useState<number | undefined>(initialData?.measurements?.chest);
-  const [arms, setArms] = useState<number | undefined>(initialData?.measurements?.arms);
-  const [thighs, setThighs] = useState<number | undefined>(initialData?.measurements?.thighs);
-  const [hips, setHips] = useState<number | undefined>(initialData?.measurements?.hips);
-  
-  // Calculate BMI if height is available
-  const [bmi, setBmi] = useState<number | undefined>(undefined);
-
+  // Update weight state when userWeight changes
   useEffect(() => {
-    if (userHeight && weight) {
-      const heightInMeters = userHeight / 100;
-      const calculatedBmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(1));
-      setBmi(calculatedBmi);
-    } else {
-      setBmi(undefined);
+    if (userWeight && isOpen) {
+      setWeight(userWeight);
     }
-  }, [weight, userHeight]);
-
+  }, [userWeight, isOpen]);
+  
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,39 +49,40 @@ export default function WeightTracker({
       return;
     }
     
-    // Collect measurements if any are provided
-    const measurements: Record<string, number> = {};
-    if (waist) measurements.waist = waist;
-    if (chest) measurements.chest = chest;
-    if (arms) measurements.arms = arms;
-    if (thighs) measurements.thighs = thighs;
-    if (hips) measurements.hips = hips;
-    
     onSubmit({
       date,
-      weight,
-      bodyFat,
-      bmi,
-      notes,
-      measurements: Object.keys(measurements).length > 0 ? measurements : undefined
+      weight
     });
   };
 
-  const getBmiCategory = (bmiValue: number): { label: string; color: string } => {
-    if (bmiValue < 18.5) return { label: 'Underweight', color: '#3b82f6' }; // blue
-    if (bmiValue < 25) return { label: 'Normal weight', color: '#10b981' }; // green
-    if (bmiValue < 30) return { label: 'Overweight', color: '#f59e0b' }; // yellow
-    return { label: 'Obese', color: '#ef4444' }; // red
+  // Handle weight increment/decrement
+  const adjustWeight = (amount: number) => {
+    // Round to 2 decimal places to avoid floating point issues
+    setWeight(Math.max(0, parseFloat((weight + amount).toFixed(2))));
   };
+
+  // Close when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (isOpen && modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+      <div ref={modalRef} className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
         <h2 className="text-xl font-bold mb-4 text-gray-900">Track Weight</h2>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <DatePicker
             selectedDate={date}
             onChange={setDate}
@@ -120,158 +90,39 @@ export default function WeightTracker({
             maxDate={new Date()}
           />
           
-          <div>
-            <label className="block text-sm font-semibold text-gray-800 mb-1">
+          <div className="flex flex-col items-center">
+            <label className="block text-lg font-semibold text-gray-800 mb-4 self-start">
               Weight (kg)
             </label>
+            <div className="flex items-center justify-between w-full">
+              <button
+                type="button"
+                onClick={() => adjustWeight(-0.05)}
+                className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full flex items-center justify-center w-14 h-14 text-2xl"
+              >
+                <FaMinus />
+              </button>
+              
+              <div className="text-4xl font-bold text-blue-600">
+                {weight.toFixed(2)}
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => adjustWeight(0.05)}
+                className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full flex items-center justify-center w-14 h-14 text-2xl"
+              >
+                <FaPlus />
+              </button>
+            </div>
+
             <input
               type="number"
-              value={weight || ''}
+              value={weight}
               onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
-              placeholder="Enter weight in kg"
-              step="0.1"
+              step="0.01"
               min="0"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-            />
-          </div>
-          
-          {bmi !== undefined && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1">
-                BMI (Body Mass Index)
-              </label>
-              <div className="flex items-center">
-                <div className="text-lg font-semibold mr-2" style={{ color: getBmiCategory(bmi).color }}>
-                  {bmi}
-                </div>
-                <div className="text-sm" style={{ color: getBmiCategory(bmi).color }}>
-                  {getBmiCategory(bmi).label}
-                </div>
-              </div>
-              <div className="mt-2 h-2 bg-gray-200 rounded-full">
-                <div 
-                  className="h-2 rounded-full"
-                  style={{ 
-                    width: `${Math.min(100, (bmi / 40) * 100)}%`,
-                    backgroundColor: getBmiCategory(bmi).color
-                  }}
-                ></div>
-              </div>
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-sm font-semibold text-gray-800 mb-1">
-              Body Fat % (optional)
-            </label>
-            <input
-              type="number"
-              value={bodyFat || ''}
-              onChange={(e) => setBodyFat(parseFloat(e.target.value) || undefined)}
-              placeholder="Enter body fat percentage"
-              step="0.1"
-              min="0"
-              max="100"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-            />
-          </div>
-          
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-sm text-blue-600 hover:text-blue-800 focus:outline-none flex items-center"
-            >
-              {showAdvanced ? '- Hide' : '+ Show'} Additional Measurements
-            </button>
-          </div>
-          
-          {showAdvanced && (
-            <div className="border border-gray-200 rounded-md p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1">
-                    Waist (cm)
-                  </label>
-                  <input
-                    type="number"
-                    value={waist || ''}
-                    onChange={(e) => setWaist(parseFloat(e.target.value) || undefined)}
-                    placeholder="Waist"
-                    step="0.1"
-                    min="0"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1">
-                    Chest (cm)
-                  </label>
-                  <input
-                    type="number"
-                    value={chest || ''}
-                    onChange={(e) => setChest(parseFloat(e.target.value) || undefined)}
-                    placeholder="Chest"
-                    step="0.1"
-                    min="0"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1">
-                    Arms (cm)
-                  </label>
-                  <input
-                    type="number"
-                    value={arms || ''}
-                    onChange={(e) => setArms(parseFloat(e.target.value) || undefined)}
-                    placeholder="Arms"
-                    step="0.1"
-                    min="0"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1">
-                    Thighs (cm)
-                  </label>
-                  <input
-                    type="number"
-                    value={thighs || ''}
-                    onChange={(e) => setThighs(parseFloat(e.target.value) || undefined)}
-                    placeholder="Thighs"
-                    step="0.1"
-                    min="0"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1">
-                    Hips (cm)
-                  </label>
-                  <input
-                    type="number"
-                    value={hips || ''}
-                    onChange={(e) => setHips(parseFloat(e.target.value) || undefined)}
-                    placeholder="Hips"
-                    step="0.1"
-                    min="0"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-sm font-semibold text-gray-800 mb-1">
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any notes about this weight measurement"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 h-24"
+              className="mt-6 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
           </div>
           

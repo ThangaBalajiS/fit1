@@ -26,12 +26,14 @@ export async function GET(request: Request) {
     const date = url.searchParams.get('date') || getTodayDate();
     console.log('date 22', date);
     const entries = await queryNutritionForDate(userId, date);
+    
     const totalCalories = entries.reduce((sum, entry) => sum + (entry.analysis?.totalCalories || 0), 0);
     return NextResponse.json({
       success: true,
       date,
       totalCalories,
       entries,
+      userId,
     });
   } catch (error) {
     console.error('Error fetching nutrition history:', error);

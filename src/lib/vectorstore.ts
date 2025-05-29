@@ -28,7 +28,7 @@ export async function queryNutritionHistory(userId: string, date: string) {
   })
     .sort({ 'foodIntake.date': -1 })
     .limit(7)
-    .lean();
+    .exec();
 }
 
 export async function getUserNutritionStats(userId: string) {
@@ -54,10 +54,13 @@ export async function queryNutritionForDate(userId: string, date: string) {
   await connectDB();
   return await Nutrition.find({
     userId,
-    'foodIntake.date': date
+    createdAt: {
+      $gte: new Date(date + 'T00:00:00.000Z'),
+      $lte: new Date(date + 'T23:59:59.999Z'),
+    },
   })
     .sort({ 'createdAt': -1 })
-    .lean();
+    .exec();
 }
 
 export async function storeWaterData(
@@ -83,7 +86,7 @@ export async function queryWaterForDate(userId: string, date: string) {
       $gte: new Date(date + 'T00:00:00.000Z'),
       $lte: new Date(date + 'T23:59:59.999Z'),
     },
-  }).sort({ timestamp: 1 }).lean();
+  }).sort({ timestamp: 1 }).exec();
   const totalIntake = entries.reduce((sum, entry) => sum + (entry.intake?.amount || 0), 0);
   return { entries, totalIntake };
 } 
